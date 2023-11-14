@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import plotly.express as px
 
 # Streamlit app
 def run_app():
@@ -7,6 +8,8 @@ def run_app():
 
     # File uploader
     uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
+    
+    # Display file contents when a file is uploaded
     if uploaded_file is not None:
         # Read the uploaded file
         data = pd.read_csv(uploaded_file)
@@ -34,8 +37,18 @@ def run_app():
         if selected_year:
             pivot_table = pivot_table[pivot_table['Year'].isin(selected_year)]
 
-        # Display pivot table
-        st.write(pivot_table)
+        # Create a pivot table-like view using plotly express
+        pivot_fig = px.bar(
+            pivot_table,
+            x='Month',
+            y='Sales excl Tax EUR',
+            color='Year',
+            labels={'Month': 'Month', 'Sales excl Tax EUR': 'Sum of Sales excl Tax EUR'},
+            title=f'Sum of Sales excl Tax EUR by Month for {", ".join(selected_country)}, {", ".join(selected_status)}, {", ".join(selected_store)}'
+        )
+
+        # Display the pivot table-like view
+        st.plotly_chart(pivot_fig)
 
 # Run the app
 if __name__ == '__main__':
