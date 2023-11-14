@@ -1,53 +1,42 @@
 import pandas as pd
 import streamlit as st
-import plotly.express as px
 
-# Load your CSV data into a DataFrame
-df = pd.read_csv('/Users/glebpeshkov/PycharmProjects/dashboard/Dashboard - Sheet1.csv')
+# Streamlit app
+def run_app():
+    st.title("Interactive Sales Dashboard")
 
-# Sidebar options for filtering
-st.sidebar.title("Filter Options")
-selected_country = st.sidebar.selectbox("Select Country", df['Country'].unique())
-selected_status = st.sidebar.selectbox("Select Status", df['Status'].unique())
-selected_store = st.sidebar.selectbox("Select Store", df['Store'].unique())
+    # File uploader
+    uploaded_file = st.file_uploader("Upload your CSV file", type="csv")
+    if uploaded_file is not None:
+        # Read the uploaded file
+        data = pd.read_csv(uploaded_file)
 
-# Filter data based on selected options
-filtered_data = df[(df['Country'] == selected_country) & (df['Status'] == selected_status) & (df['Store'] == selected_store)]
+        # Convert Year and Month to string for grouping
+        data['Year'] = data['Year'].astype(str)
+        data['Month'] = data['Month'].astype(str)
 
-# Group and aggregate data by Year, Month, and other columns as needed
-grouped_data = filtered_data.groupby(['Year', 'Month']).agg({'Sales excl Tax EUR': 'sum', 'Quantity': 'sum'}).reset_index()
+        # Creating the pivot table
+        pivot_table = pd.pivot_table(data,
+                                     values=['Sales excl Tax EUR', 'Quantity'],
+                                     index=['Country', 'Status', 'Store', 'Year', 'Month'],
+                                     aggfunc='sum').reset_index()
 
-# Create a pivot table-like view using plotly express
-pivot_table = px.bar(
-    grouped_data,
-    x='Month',
-    y='Sales excl Tax EUR',
-    color='Year',
-    labels={'Month': 'Month', 'Sales excl Tax EUR': 'Sum of Sales excl Tax EUR'},
-    title=f'Sum of Sales excl Tax EUR by Month for {selected_country}, {selected_status}, {selected_store}'
-)
+        # Filters for the sidebar
+        selected_country = st.sidebar.multiselect('Select Country', options=pivot_table['Country'].unique())
+        selected_status = st.sidebar.multiselect('Select Status', options=pivot_table['Status'].unique())
+        selected_year = st.sidebar.multiselect('Select Year', options=pivot_table['Year'].unique())
 
-# Display the pivot table-like view
-st.plotly_chart(pivot_table)
+        # Apply filters to the pivot table
+        if selected_country:
+            pivot_table = pivot_table[pivot_table['Country'].isin(selected_country)]
+        if selected_status:
+            pivot_table = pivot_table[pivot_table['Status'].isin(selected_status)]
+        if selected_year:
+            pivot_table = pivot_table[pivot_table['Year'].isin(selected_year)]
 
-# Add a download link for the filtered data
-st.sidebar.markdown("### Download Filtered Data")
-filtered_data_link = df.to_csv(index=False).encode('utf-8')
-st.sidebar.download_button(
-    label="Download Filtered Data",
-    data=filtered_data_link,
-    file_name="filtered_data.csv",
-)
+        # Display pivot table
+        st.write(pivot_table)
 
-# Optional: Wrap the pivot table by Year
-if st.checkbox("Wrap by Year"):
-    wrapped_pivot = px.bar(
-        grouped_data,
-        x='Month',
-        y='Sales excl Tax EUR',
-        color='Year',
-        facet_row='Year',
-        labels={'Month': 'Month', 'Sales excl Tax EUR': 'Sum of Sales excl Tax EUR'},
-        title=f'Sum of Sales excl Tax EUR by Month for {selected_country}, {selected_status}, {selected_store}'
-    )
-    st.plotly_chart(wrapped_pivot)
+# Run the app
+if __name__ == '__main__':
+    run_app()
