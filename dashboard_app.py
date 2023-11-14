@@ -27,24 +27,25 @@ def run_app():
         # Filters for the sidebar
         selected_country = st.sidebar.multiselect('Select Country', options=pivot_table['Country'].unique())
         selected_status = st.sidebar.multiselect('Select Status', options=pivot_table['Status'].unique())
-        selected_year = st.sidebar.multiselect('Select Year', options=pivot_table['Year'].unique())
+        selected_store = st.sidebar.multiselect('Select Store', options=pivot_table['Store'].unique())
 
         # Apply filters to the pivot table
         if selected_country:
             pivot_table = pivot_table[pivot_table['Country'].isin(selected_country)]
         if selected_status:
             pivot_table = pivot_table[pivot_table['Status'].isin(selected_status)]
-        if selected_year:
-            pivot_table = pivot_table[pivot_table['Year'].isin(selected_year)]
+        if selected_store:
+            pivot_table = pivot_table[pivot_table['Store'].isin(selected_store)]
 
         # Create a pivot table-like view using plotly express
+        title_text = f'Sum of Sales excl Tax EUR by Month for {", ".join(selected_country)}, {", ".join(selected_status)}, {", ".join(selected_store)}'
         pivot_fig = px.bar(
             pivot_table,
             x='Month',
             y='Sales excl Tax EUR',
             color='Year',
             labels={'Month': 'Month', 'Sales excl Tax EUR': 'Sum of Sales excl Tax EUR'},
-            title=f'Sum of Sales excl Tax EUR by Month for {", ".join(selected_country)}, {", ".join(selected_status)}, {", ".join(selected_store)}'
+            title=title_text
         )
 
         # Display the pivot table-like view
